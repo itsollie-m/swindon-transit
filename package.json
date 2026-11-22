@@ -1,0 +1,23 @@
+{
+  "name": "swindon-transit",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "csv-parse": "^7.0.3",
+    "discord.js": "^14.28.1",
+    "dotenv": "^18.0.10",
+    "mysql2": "^3.24.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
