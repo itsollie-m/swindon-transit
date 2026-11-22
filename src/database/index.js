@@ -39,7 +39,12 @@ async function testConnection() {
     }
 }
 
+async function closePool() {
+    await pool.end();
+}
+
 module.exports = {
     pool,
-    testConnection
+    testConnection,
+    closePool
 };
