@@ -158,3 +158,25 @@ vite.config.ts.timestamp-*
 .nx/cache
 .nx/workspace-data
 .nx/migrate-runs
+
+# Local timetable data
+data/
+!data/.gitkeep
+
+# Database exports and backups
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+
+# Private certificates and keys
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Temporary files
+*.tmp
+*.bak
+*.old
