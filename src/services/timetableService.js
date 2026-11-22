@@ -76,6 +76,55 @@ async function getRoutes() {
     }));
 }
 
+async function getRouteDetails(routeNumber) {
+    if (!routeNumber) {
+        throw new Error("A route number is required.");
+    }
+
+    const [rows] = await pool.execute(
+        `SELECT
+            r.route_id,
+            r.route_short_name,
+            r.route_long_name,
+            r.route_color,
+            r.route_text_color,
+            COUNT(DISTINCT t.trip_id) AS journey_count,
+            GROUP_CONCAT(
+                DISTINCT t.trip_headsign
+                ORDER BY t.trip_headsign
+                SEPARATOR '|||'
+            ) AS destinations
+         FROM routes r
+         LEFT JOIN trips t ON t.route_id = r.route_id
+         WHERE r.route_short_name = ?
+         GROUP BY
+            r.route_id,
+            r.route_short_name,
+            r.route_long_name,
+            r.route_color,
+            r.route_text_color`,
+        [String(routeNumber)]
+    );
+
+    if (rows.length === 0) {
+        return null;
+    }
+
+    const route = rows[0];
+
+    return {
+        id: route.route_id,
+        number: route.route_short_name,
+        name: route.route_long_name,
+        colour: route.route_color,
+        textColour: route.route_text_color,
+        journeyCount: Number(route.journey_count),
+        destinations: route.destinations
+            ? route.destinations.split("|||")
+            : []
+    };
+}
+
 // DATE UTILITIES
 function formatDate(date) {
     const year = date.getFullYear();
@@ -211,6 +260,7 @@ async function getDepartures(stopId, options = {}) {
 module.exports = {
     searchStops,
     getRoutes,
+    getRouteDetails,
     getActiveServices,
     getDepartures
 };
