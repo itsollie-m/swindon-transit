@@ -21,14 +21,36 @@ function importGtfs(zipPath) {
     const zip = new AdmZip(zipPath);
 
     const agencies = readGtfsFile(zip, "agency.txt");
-    const routes = readGtfsFile(zip, "routes.txt");
-    const stops = readGtfsFile(zip, "stops.txt");
-    const trips = readGtfsFile(zip, "trips.txt");
-    const stopTimes = readGtfsFile(zip, "stop_times.txt");
+    const allRoutes = readGtfsFile(zip, "routes.txt");
+    const allStops = readGtfsFile(zip, "stops.txt");
+    const allTrips = readGtfsFile(zip, "trips.txt");
+    const allStopTimes = readGtfsFile(zip, "stop_times.txt");
+
+    const routes = allRoutes.filter(
+        route => route.agency_id === "TDTR"
+    );
+
+    const routeIds = new Set(routes.map(route => route.route_id));
+
+    const trips = allTrips.filter(
+        trip => routeIds.has(trip.route_id)
+    );
+
+    const tripIds = new Set(trips.map(trip => trip.trip_id));
+
+    const stopTimes = allStopTimes.filter(
+        time => tripIds.has(time.trip_id)
+    );
+
+    const stopIds = new Set(stopTimes.map(time => time.stop_id));
+
+    const stops = allStops.filter(
+        stop => stopIds.has(stop.stop_id)
+    );
 
     return {
-        agencies,
-        routes: routes.filter(route => route.agency_id === "TDTR"),
+        agencies: agencies.filter(agency => agency.agency_id === "TDTR"),
+        routes,
         stops,
         trips,
         stopTimes
