@@ -125,6 +125,87 @@ async function getRouteDetails(routeNumber) {
     };
 }
 
+async function getRouteTimetable(routeNumber, timetableType = "weekdays") {
+    const timetableDays = {
+        weekdays: {
+            label: "Weekdays",
+            filter: "(c.monday = 1 OR c.tuesday = 1 OR c.wednesday = 1 OR c.thursday = 1 OR c.friday = 1)"
+        },
+        saturdays: {
+            label: "Saturdays",
+            filter: "c.saturday = 1"
+        },
+        sundays: {
+            label: "Sundays & Public Holidays",
+            filter: "c.sunday = 1"
+        }
+    };
+
+    const selectedDays = timetableDays[timetableType];
+
+    if (!selectedDays) {
+        throw new Error("Invalid timetable type.");
+    }
+
+    if (!routeNumber) {
+        throw new Error("A route number is required.");
+    }
+
+    const [rows] = await pool.execute(
+        `SELECT
+            t.trip_id,
+            t.trip_headsign,
+            t.service_id,
+            c.monday,
+            c.tuesday,
+            c.wednesday,
+            c.thursday,
+            c.friday,
+            c.saturday,
+            c.sunday,
+            origin.stop_id,
+            origin.departure_time,
+            s.stop_name AS origin_name
+         FROM routes r
+         JOIN trips t ON t.route_id = r.route_id
+         JOIN calendar c ON c.service_id = t.service_id
+         JOIN stop_times origin
+            ON origin.trip_id = t.trip_id
+            AND origin.stop_sequence = (
+                SELECT MIN(first_stop.stop_sequence)
+                FROM stop_times first_stop
+                WHERE first_stop.trip_id = t.trip_id
+            )
+         JOIN stops s ON s.stop_id = origin.stop_id
+         WHERE r.route_short_name = ?
+         AND ${selectedDays.filter}
+         ORDER BY origin.departure_time ASC`,
+        [String(routeNumber)]
+    );
+
+    return {
+        route: String(routeNumber),
+        timetableType,
+        timetableLabel: selectedDays.label,
+        journeys: rows.map(row => ({
+            tripId: row.trip_id,
+            departureTime: formatGtfsTime(row.departure_time),
+            origin: row.origin_name,
+            originStopId: row.stop_id,
+            destination: row.trip_headsign,
+            operatingDays: [
+                row.monday && "Monday",
+                row.tuesday && "Tuesday",
+                row.wednesday && "Wednesday",
+                row.thursday && "Thursday",
+                row.friday && "Friday",
+                row.saturday && "Saturday",
+                row.sunday && "Sunday"
+            ].filter(Boolean)
+        }))
+    };
+}
+
 // DATE UTILITIES
 function formatDate(date) {
     const year = date.getFullYear();
@@ -261,6 +342,7 @@ module.exports = {
     searchStops,
     getRoutes,
     getRouteDetails,
+    getRouteTimetable,
     getActiveServices,
     getDepartures
 };
