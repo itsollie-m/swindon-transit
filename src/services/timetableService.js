@@ -206,6 +206,74 @@ async function getRouteTimetable(routeNumber, timetableType = "weekdays") {
     };
 }
 
+ // JOURNEY DETAILS
+async function getJourneyDetails(tripId) {
+    if (!tripId || !tripId.trim()) {
+        throw new Error("A trip ID is required.");
+    }
+
+    const [rows] = await pool.execute(
+        `SELECT
+            t.trip_id,
+            t.trip_headsign,
+            t.direction_id,
+            r.route_id,
+            r.route_short_name,
+            r.route_color,
+            r.route_text_color,
+            st.stop_sequence,
+            st.stop_id,
+            st.arrival_time,
+            st.departure_time,
+            s.stop_name,
+            s.stop_lat,
+            s.stop_lon
+         FROM trips t
+         JOIN routes r ON r.route_id = t.route_id
+         JOIN stop_times st ON st.trip_id = t.trip_id
+         JOIN stops s ON s.stop_id = st.stop_id
+         WHERE t.trip_id = ?
+         ORDER BY st.stop_sequence ASC`,
+        [tripId]
+    );
+
+    if (rows.length === 0) {
+        return null;
+    }
+
+    const firstStop = rows[0];
+    const lastStop = rows[rows.length - 1];
+
+    return {
+        tripId: firstStop.trip_id,
+
+        route: {
+            id: firstStop.route_id,
+            number: firstStop.route_short_name,
+            colour: firstStop.route_color,
+            textColour: firstStop.route_text_color
+        },
+
+        destination: firstStop.trip_headsign,
+        direction: firstStop.direction_id,
+
+        origin: firstStop.stop_name,
+        finalStop: lastStop.stop_name,
+
+        totalStops: rows.length,
+
+        stops: rows.map(row => ({
+            sequence: Number(row.stop_sequence),
+            id: row.stop_id,
+            name: row.stop_name,
+            arrivalTime: formatGtfsTime(row.arrival_time),
+            departureTime: formatGtfsTime(row.departure_time),
+            latitude: Number(row.stop_lat),
+            longitude: Number(row.stop_lon)
+        }))
+    };
+}
+
 // DATE UTILITIES
 function formatDate(date) {
     const year = date.getFullYear();
@@ -344,5 +412,6 @@ module.exports = {
     getRouteDetails,
     getRouteTimetable,
     getActiveServices,
-    getDepartures
+    getDepartures,
+    getJourneyDetails
 };
