@@ -22,6 +22,7 @@ module.exports = {
         const disableDelay = 2 * 60 * 1000;
         let disableTimeout;
         let refreshDisabled = false;
+        let lastInteractionLatency = Date.now() - interaction.createdTimestamp;
 
         const restartDisableTimer = () => {
             if (disableTimeout) clearTimeout(disableTimeout);
@@ -30,7 +31,7 @@ module.exports = {
                 refreshDisabled = true;
                 try {
                     await interaction.editReply(
-                        buildResponse(Date.now() - interaction.createdTimestamp, true)
+                        buildResponse(lastInteractionLatency, true)
                     );
                 } catch (error) {
                     console.error("Unable to disable the ping refresh button:", error);
@@ -106,7 +107,7 @@ module.exports = {
         };
 
         await interaction.reply({
-            ...buildResponse(Date.now() - interaction.createdTimestamp),
+            ...buildResponse(lastInteractionLatency),
             flags: MessageFlags.Ephemeral,
             withResponse: true
         });
@@ -137,8 +138,9 @@ module.exports = {
             }
 
             refreshDisabled = false;
+            lastInteractionLatency = Date.now() - buttonInteraction.createdTimestamp;
             await buttonInteraction.update(
-                buildResponse(Date.now() - buttonInteraction.createdTimestamp, false)
+                buildResponse(lastInteractionLatency, false)
             );
             restartDisableTimer();
         });
