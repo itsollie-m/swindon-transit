@@ -35,15 +35,15 @@ module.exports = {
 
         if (interactionLatency < 100) {
             status = "Excellent";
-            colour = 0x2ECC71;
+            colour = 7909721;
             indicator = "🟢";
         } else if (interactionLatency < 200) {
             status = "Moderate";
-            colour = 0xF1C40F;
+            colour = 16632664;
             indicator = "🟡";
         } else {
             status = "Slow";
-            colour = 0xE74C3C;
+            colour = 14495300;
             indicator = "🔴";
         }
 
@@ -60,7 +60,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setTitle("🏓 Pong!")
-            .setColor(7909721)
+            .setColor(colour)
             .addFields(
                 {
                     name: "Service Status",
